@@ -8,12 +8,14 @@
 
 已移除全部遥测。已移除额外注入的安全提示词护栏。已解锁全部可编译的实验特性。一个二进制，无需回传。
 
+> 当前仓库是在 [paoloanzn](https://github.com/paoloanzn) 最初重构的 free-code 工作基础上继续扩展而来，新增了全平台部署、一键安装器以及 GitHub Actions 自动发版能力。原始重构仓库的保留镜像见：https://gitlawb.com/node/repos/z6MkgKkb/paoloanzn-free-code
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/paoloanzn/free-code/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Cross2pro/free-coder/main/install.sh | bash
 ```
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/paoloanzn/free-code/main/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/Cross2pro/free-coder/main/install.ps1 | iex"
 ```
 
 > 安装器会优先下载 Linux、macOS、Windows 对应的预编译发布包。如果没有匹配的发布资产，则会自动回退为源码构建。
@@ -78,11 +80,11 @@ Claude Code 内部包含大量由 `bun:bundle` 编译期开关控制的特性标
 ## 快速安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/paoloanzn/free-code/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Cross2pro/free-coder/main/install.sh | bash
 ```
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/paoloanzn/free-code/main/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/Cross2pro/free-coder/main/install.ps1 | iex"
 ```
 
 在已发布对应资产的情况下，安装器会下载与你平台匹配的预编译二进制并安装 `free-code` 到 PATH 中。如果没有匹配的发布包，则会自动回退为源码构建。
@@ -108,8 +110,8 @@ free-code
 
 ```bash
 # 克隆仓库
-git clone https://github.com/paoloanzn/claude-code.git
-cd claude-code
+git clone https://github.com/Cross2pro/free-coder.git
+cd free-coder
 
 # 安装依赖
 bun install
@@ -254,6 +256,14 @@ src/
 - **Gateway:** https://w3s.link/ipfs/bafybeiegvef3dt24n2znnnmzcud2vxat7y7yoglxappim54bm
 
 即使这个仓库被下线，代码仍然存在。
+
+---
+
+## 致谢
+
+- 原始产品：[Anthropic Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+- 最初的 free-code 重构仓库与研究打包工作：[paoloanzn](https://github.com/paoloanzn)
+- 原始重构仓库镜像：https://gitlawb.com/node/repos/z6MkgKkb/paoloanzn-free-code
 
 ---
 

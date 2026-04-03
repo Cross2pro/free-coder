@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-$Repo = if ($env:FREE_CODE_REPO) { $env:FREE_CODE_REPO } else { 'paoloanzn/free-code' }
+$Repo = if ($env:FREE_CODE_REPO) { $env:FREE_CODE_REPO } else { 'Cross2pro/free-coder' }
 $Version = if ($env:FREE_CODE_VERSION) { $env:FREE_CODE_VERSION } else { 'latest' }
 $InstallRoot = if ($env:FREE_CODE_HOME) { $env:FREE_CODE_HOME } else { Join-Path $HOME 'AppData\Local\free-code' }
 $BinDir = if ($env:FREE_CODE_BIN_DIR) { $env:FREE_CODE_BIN_DIR } else { Join-Path $InstallRoot 'bin' }

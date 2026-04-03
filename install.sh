@@ -9,7 +9,7 @@ BOLD='\033[1m'
 DIM='\033[2m'
 RESET='\033[0m'
 
-REPO="${FREE_CODE_REPO:-paoloanzn/free-code}"
+REPO="${FREE_CODE_REPO:-Cross2pro/free-coder}"
 VERSION="${FREE_CODE_VERSION:-latest}"
 INSTALL_ROOT="${FREE_CODE_HOME:-$HOME/.free-code}"
 BIN_DIR="${FREE_CODE_BIN_DIR:-$HOME/.local/bin}"

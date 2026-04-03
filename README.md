@@ -8,12 +8,14 @@ Now with full-platform deployment: prebuilt one-command installers for Linux, ma
 
 All telemetry stripped. All injected security-prompt guardrails removed. All experimental features unlocked. One binary, zero callbacks home.
 
+> This repository extends the original reconstructed free-code work by [paoloanzn](https://github.com/paoloanzn), adding full-platform deployment, one-command installers, and GitHub Actions release automation. A preserved mirror of the original repo is available at https://gitlawb.com/node/repos/z6MkgKkb/paoloanzn-free-code
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/paoloanzn/free-code/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Cross2pro/free-coder/main/install.sh | bash
 ```
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/paoloanzn/free-code/main/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/Cross2pro/free-coder/main/install.ps1 | iex"
 ```
 
 > The installers now prefer prebuilt release packages for Linux, macOS, and Windows. If a matching release asset is unavailable, they fall back to building from source.
@@ -78,11 +80,11 @@ See [FEATURES.md](FEATURES.md) for the full audit of all 88 flags and their stat
 ## Quick install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/paoloanzn/free-code/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Cross2pro/free-coder/main/install.sh | bash
 ```
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/paoloanzn/free-code/main/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/Cross2pro/free-coder/main/install.ps1 | iex"
 ```
 
 On supported releases, this downloads a prebuilt binary for your platform and installs `free-code` onto your PATH. If no release asset matches, the installer falls back to a source build.
@@ -107,8 +109,8 @@ free-code
 
 ```bash
 # Clone the repo
-git clone https://github.com/paoloanzn/claude-code.git
-cd claude-code
+git clone https://github.com/Cross2pro/free-coder.git
+cd free-coder
 
 # Install dependencies
 bun install
@@ -253,6 +255,14 @@ A full copy of this repository is permanently pinned on IPFS via Filecoin:
 - **Gateway:** https://w3s.link/ipfs/bafybeiegvef3dt24n2znnnmzcud2vxat7y7rl5ikz7y7yoglxappim54bm
 
 If this repo gets taken down, the code lives on.
+
+---
+
+## Credits
+
+- Original product: [Anthropic Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+- Original reconstructed free-code repository and research packaging work: [paoloanzn](https://github.com/paoloanzn)
+- Original reconstructed repo mirror: https://gitlawb.com/node/repos/z6MkgKkb/paoloanzn-free-code
 
 ---
 

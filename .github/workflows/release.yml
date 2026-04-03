@@ -27,7 +27,7 @@ jobs:
           - runner: windows-11-arm
             artifact_name: free-code-windows-arm64
             targets: windows-arm64
-          - runner: macos-13
+          - runner: macos-15-intel
             artifact_name: free-code-macos-x64
             targets: macos-x64
           - runner: macos-14
@@ -60,22 +60,27 @@ jobs:
             dist/release/*.zip
 
   publish-release:
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') && always()
     needs: build-release
     runs-on: ubuntu-latest
 
     steps:
       - name: Download workflow artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           path: dist/collected
 
       - name: Flatten release files
         run: |
           mkdir -p dist/release
-          find dist/collected -type f -exec cp {} dist/release/ \;
+          if [ -d dist/collected ]; then
+            find dist/collected -type f -exec cp {} dist/release/ \;
+          fi
 
       - name: Publish GitHub release assets
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/release/*
+          files: |
+            dist/release/*.tar.gz
+            dist/release/*.zip
