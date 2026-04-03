@@ -8,7 +8,11 @@ All telemetry stripped. All injected security-prompt guardrails removed. All exp
 curl -fsSL https://raw.githubusercontent.com/paoloanzn/free-code/main/install.sh | bash
 ```
 
-> Checks your system, installs Bun if needed, clones, builds with all features enabled, and puts `free-code` on your PATH. Then just `export ANTHROPIC_API_KEY="sk-ant-..."` and run `free-code`.
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/paoloanzn/free-code/main/install.ps1 | iex"
+```
+
+> The installers now prefer prebuilt release packages for Linux, macOS, and Windows. If a matching release asset is unavailable, they fall back to building from source.
 
 <p align="center">
   <img src="assets/screenshot.png" alt="free-code screenshot" width="800" />
@@ -73,7 +77,11 @@ See [FEATURES.md](FEATURES.md) for the full audit of all 88 flags and their stat
 curl -fsSL https://raw.githubusercontent.com/paoloanzn/free-code/main/install.sh | bash
 ```
 
-This will check your system, install Bun if needed, clone the repo, build the binary with all experimental features enabled, and symlink it as `free-code` on your PATH.
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/paoloanzn/free-code/main/install.ps1 | iex"
+```
+
+On supported releases, this downloads a prebuilt binary for your platform and installs `free-code` onto your PATH. If no release asset matches, the installer falls back to a source build.
 
 After install, just run:
 ```bash
@@ -85,14 +93,9 @@ free-code
 
 ## Requirements
 
-- [Bun](https://bun.sh) >= 1.3.11
-- macOS or Linux (Windows via WSL)
+- For prebuilt install: no Bun required
+- For source builds: [Bun](https://bun.sh) >= 1.3.11
 - An Anthropic API key (set `ANTHROPIC_API_KEY` in your environment)
-
-```bash
-# Install Bun if you don't have it
-curl -fsSL https://bun.sh/install | bash
-```
 
 ---
 
@@ -127,6 +130,24 @@ bun run compile
 | `bun run build:dev` | `./cli-dev` | `VOICE_MODE` only | Dev version stamp |
 | `bun run build:dev:full` | `./cli-dev` | All 45+ experimental flags | The full unlock build |
 | `bun run compile` | `./dist/cli` | `VOICE_MODE` only | Alternative output directory |
+
+### Release packaging
+
+```bash
+# Build all release archives into ./dist/release
+bun run release:build
+
+# Build just a subset while iterating locally
+bun run release:build --targets=windows-x64,linux-x64,macos-arm64
+```
+
+This generates:
+
+- Versionless install assets such as `free-code-windows-x64.zip` and `free-code-linux-x64.tar.gz`
+- `manifest.json` with target metadata
+- `checksums.txt` with SHA-256 sums
+
+The repository also includes [release.yml](.github/workflows/release.yml), which builds and publishes these archives automatically when you push a `v*` tag.
 
 ### Individual feature flags
 

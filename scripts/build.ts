@@ -10,6 +10,20 @@ const args = process.argv.slice(2)
 const compile = args.includes('--compile')
 const dev = args.includes('--dev')
 
+function getOption(name: string): string | null {
+  const inlinePrefix = `--${name}=`
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i]
+    if (arg === `--${name}`) {
+      return args[i + 1] ?? null
+    }
+    if (arg.startsWith(inlinePrefix)) {
+      return arg.slice(inlinePrefix.length)
+    }
+  }
+  return null
+}
+
 const fullExperimentalFeatures = [
   'AGENT_MEMORY_SNAPSHOT',
   'AGENT_TRIGGERS',
@@ -109,17 +123,17 @@ for (let i = 0; i < args.length; i += 1) {
 }
 const features = [...featureSet]
 
-const outfile = compile
-  ? dev
-    ? './dist/cli-dev'
-    : './dist/cli'
-  : dev
-    ? './cli-dev'
-    : './cli'
+const outfile =
+  getOption('outfile') ??
+  (compile ? (dev ? './dist/cli-dev' : './dist/cli') : dev ? './cli-dev' : './cli')
+const target = getOption('target') ?? 'bun'
 const buildTime = new Date().toISOString()
 const version = dev ? getDevVersion(pkg.version) : pkg.version
 
-mkdirSync(dirname(outfile), { recursive: true })
+const outDir = dirname(outfile)
+if (outDir !== '.') {
+  mkdirSync(outDir, { recursive: true })
+}
 
 const externals = [
   '@ant/*',
@@ -156,12 +170,12 @@ const defines = {
 } as const
 
 const cmd = [
-  'bun',
+  process.execPath,
   'build',
   './src/entrypoints/cli.tsx',
   '--compile',
   '--target',
-  'bun',
+  target,
   '--format',
   'esm',
   '--outfile',
