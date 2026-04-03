@@ -1,6 +1,10 @@
 # free-code
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 **The free build of Claude Code.**
+
+Now with full-platform deployment: prebuilt one-command installers for Linux, macOS, and Windows, plus GitHub Actions release automation for cross-platform builds.
 
 All telemetry stripped. All injected security-prompt guardrails removed. All experimental features unlocked. One binary, zero callbacks home.
 

@@ -2,7 +2,7 @@
   "name": "claude-code-source-snapshot",
   "version": "2.1.87",
   "private": true,
-  "description": "Reconstructed Bun CLI workspace for the Claude Code source snapshot.",
+  "description": "The free build of Claude Code with one-command installers and GitHub Actions release packaging for Linux, macOS, and Windows. / Claude Code 的自由构建版本，支持 Linux、macOS、Windows 一键安装与 GitHub Actions 自动发布。",
   "type": "module",
   "packageManager": "bun@1.3.11",
   "bin": {
