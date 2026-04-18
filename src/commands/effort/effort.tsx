@@ -28,7 +28,7 @@ function setEffortValue(effortValue: EffortValue): EffortCommandResult {
   logEvent('tengu_effort_command', {
     effort: effortValue as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
   });
-
+ 
   // Env var wins at resolveAppliedEffort time. Only flag it when it actually
   // conflicts — if env matches what the user just asked for, the outcome is
   // the same, so "Set effort to X" is true and the note is noise.
@@ -171,7 +171,7 @@ function ApplyEffortAndClose(t0) {
 export async function call(onDone: LocalJSXCommandOnDone, _context: unknown, args?: string): Promise<React.ReactNode> {
   args = args?.trim() || '';
   if (COMMON_HELP_ARGS.includes(args)) {
-    onDone('Usage: /effort [low|medium|high|max|auto]\n\nEffort levels:\n- low: Quick, straightforward implementation\n- medium: Balanced approach with standard testing\n- high: Comprehensive implementation with extensive testing\n- max: Maximum capability with deepest reasoning (Opus 4.6 only)\n- auto: Use the default effort level for your model');
+    onDone('Usage: /effort [low|medium|high|max|auto]\n\nEffort levels:\n- low: Quick, straightforward implementation\n- medium: Balanced approach with standard testing\n- high: Comprehensive implementation with extensive testing\n- max: Maximum capability with deepest reasoning (current Opus only)\n- auto: Use the default effort level for your model');
     return;
   }
   if (!args || args === 'current' || args === 'status') {

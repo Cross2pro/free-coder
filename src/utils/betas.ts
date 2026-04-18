@@ -29,13 +29,13 @@ import { getCanonicalName } from './model/model.js'
 import { get3PModelCapabilityOverride } from './model/modelSupportOverrides.js'
 import { getAPIProvider } from './model/providers.js'
 import { getInitialSettings } from './settings/settings.js'
-
+ 
 /**
  * SDK-provided betas that are allowed for API key users.
  * Only betas in this list can be passed via SDK options.
  */
 const ALLOWED_SDK_BETAS = [CONTEXT_1M_BETA_HEADER]
-
+ 
 /**
  * Filter betas to only include those in the allowlist.
  * Returns allowed and disallowed betas separately.
@@ -55,7 +55,7 @@ function partitionBetasByAllowlist(betas: string[]): {
   }
   return { allowed, disallowed }
 }
-
+ 
 /**
  * Filter SDK betas to only include allowed ones.
  * Warns about disallowed betas and subscriber restrictions.
@@ -67,7 +67,7 @@ export function filterAllowedSdkBetas(
   if (!sdkBetas || sdkBetas.length === 0) {
     return undefined
   }
-
+ 
   if (isClaudeAISubscriber()) {
     // biome-ignore lint/suspicious/noConsole: intentional warning
     console.warn(
@@ -75,7 +75,7 @@ export function filterAllowedSdkBetas(
     )
     return undefined
   }
-
+ 
   const { allowed, disallowed } = partitionBetasByAllowlist(sdkBetas)
   for (const beta of disallowed) {
     // biome-ignore lint/suspicious/noConsole: intentional warning
@@ -85,10 +85,10 @@ export function filterAllowedSdkBetas(
   }
   return allowed.length > 0 ? allowed : undefined
 }
-
+ 
 // Generally, foundry supports all 1P features;
 // however out of an abundance of caution, we do not enable any which are behind an experiment
-
+ 
 export function modelSupportsISP(model: string): boolean {
   const supported3P = get3PModelCapabilityOverride(
     model,
@@ -110,7 +110,7 @@ export function modelSupportsISP(model: string): boolean {
     canonical.includes('claude-opus-4') || canonical.includes('claude-sonnet-4')
   )
 }
-
+ 
 function vertexModelSupportsWebSearch(model: string): boolean {
   const canonical = getCanonicalName(model)
   // Web search only supported on Claude 4.0+ models on Vertex
@@ -120,7 +120,7 @@ function vertexModelSupportsWebSearch(model: string): boolean {
     canonical.includes('claude-haiku-4')
   )
 }
-
+ 
 // Context management is supported on Claude 4+ models
 export function modelSupportsContextManagement(model: string): boolean {
   const canonical = getCanonicalName(model)
@@ -137,7 +137,7 @@ export function modelSupportsContextManagement(model: string): boolean {
     canonical.includes('claude-haiku-4')
   )
 }
-
+ 
 // @[MODEL LAUNCH]: Add the new model ID to this list if it supports structured outputs.
 export function modelSupportsStructuredOutputs(model: string): boolean {
   const canonical = getCanonicalName(model)
@@ -147,15 +147,17 @@ export function modelSupportsStructuredOutputs(model: string): boolean {
     return false
   }
   return (
+    canonical.includes('claude-sonnet-4-7') ||
     canonical.includes('claude-sonnet-4-6') ||
     canonical.includes('claude-sonnet-4-5') ||
     canonical.includes('claude-opus-4-1') ||
     canonical.includes('claude-opus-4-5') ||
+    canonical.includes('claude-opus-4-7') ||
     canonical.includes('claude-opus-4-6') ||
     canonical.includes('claude-haiku-4-5')
   )
 }
-
+ 
 // @[MODEL LAUNCH]: Add the new model if it supports auto mode (specifically PI probes) — ask in #proj-claude-code-safety-research.
 export function modelSupportsAutoMode(model: string): boolean {
   if (feature('TRANSCRIPT_CLASSIFIER')) {
@@ -189,11 +191,11 @@ export function modelSupportsAutoMode(model: string): boolean {
       return true
     }
     // External allowlist (firstParty already checked above).
-    return /^claude-(opus|sonnet)-4-6/.test(m)
+    return /^claude-(opus|sonnet)-4-(6|7)/.test(m)
   }
   return false
 }
-
+ 
 /**
  * Get the correct tool search beta header for the current API provider.
  * - Claude API / Foundry: advanced-tool-use-2025-11-20
@@ -206,7 +208,7 @@ export function getToolSearchBetaHeader(): string {
   }
   return TOOL_SEARCH_BETA_HEADER_1P
 }
-
+ 
 /**
  * Check if experimental betas should be included.
  * These are betas that are only available on firstParty provider
@@ -218,7 +220,7 @@ export function shouldIncludeFirstPartyOnlyBetas(): boolean {
     !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)
   )
 }
-
+ 
 /**
  * Global-scope prompt caching is firstParty only. Foundry is excluded because
  * GrowthBook never bucketed Foundry users into the rollout experiment — the
@@ -230,13 +232,13 @@ export function shouldUseGlobalCacheScope(): boolean {
     !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS)
   )
 }
-
+ 
 export const getAllModelBetas = memoize((model: string): string[] => {
   const betaHeaders = []
   const isHaiku = getCanonicalName(model).includes('haiku')
   const provider = getAPIProvider()
   const includeFirstPartyOnlyBetas = shouldIncludeFirstPartyOnlyBetas()
-
+ 
   if (!isHaiku) {
     betaHeaders.push(CLAUDE_CODE_20250219_BETA_HEADER)
     if (
@@ -260,7 +262,7 @@ export const getAllModelBetas = memoize((model: string): string[] => {
   ) {
     betaHeaders.push(INTERLEAVED_THINKING_BETA_HEADER)
   }
-
+ 
   // Skip the API-side Haiku thinking summarizer — the summary is only used
   // for ctrl+o display, which interactive users rarely open. The API returns
   // redacted_thinking blocks instead; AssistantRedactedThinkingMessage already
@@ -275,7 +277,7 @@ export const getAllModelBetas = memoize((model: string): string[] => {
   ) {
     betaHeaders.push(REDACT_THINKING_BETA_HEADER)
   }
-
+ 
   // POC: server-side connector-text summarization (anti-distillation). The
   // API buffers assistant text between tool calls, summarizes it, and returns
   // the summary with a signature so the original can be restored on subsequent
@@ -296,14 +298,14 @@ export const getAllModelBetas = memoize((model: string): string[] => {
   ) {
     betaHeaders.push(SUMMARIZE_CONNECTOR_TEXT_BETA_HEADER)
   }
-
+ 
   // Add context management beta for tool clearing (ant opt-in) or thinking preservation
   const antOptedIntoToolClearing =
     isEnvTruthy(process.env.USE_API_CONTEXT_MANAGEMENT) &&
     process.env.USER_TYPE === 'ant'
-
+ 
   const thinkingPreservationEnabled = modelSupportsContextManagement(model)
-
+ 
   if (
     shouldIncludeFirstPartyOnlyBetas() &&
     (antOptedIntoToolClearing || thinkingPreservationEnabled)
@@ -341,7 +343,7 @@ export const getAllModelBetas = memoize((model: string): string[] => {
   ) {
     betaHeaders.push(TOKEN_EFFICIENT_TOOLS_BETA_HEADER)
   }
-
+ 
   // Add web search beta for Vertex Claude 4.0+ models only
   if (provider === 'vertex' && vertexModelSupportsWebSearch(model)) {
     betaHeaders.push(WEB_SEARCH_BETA_HEADER)
@@ -350,12 +352,12 @@ export const getAllModelBetas = memoize((model: string): string[] => {
   if (provider === 'foundry') {
     betaHeaders.push(WEB_SEARCH_BETA_HEADER)
   }
-
+ 
   // Always send the beta header for 1P. The header is a no-op without a scope field.
   if (includeFirstPartyOnlyBetas) {
     betaHeaders.push(PROMPT_CACHING_SCOPE_BETA_HEADER)
   }
-
+ 
   // If ANTHROPIC_BETAS is set, split it by commas and add to betaHeaders.
   // This is an explicit user opt-in, so honor it regardless of model.
   if (process.env.ANTHROPIC_BETAS) {
@@ -367,7 +369,7 @@ export const getAllModelBetas = memoize((model: string): string[] => {
   }
   return betaHeaders
 })
-
+ 
 export const getModelBetas = memoize((model: string): string[] => {
   const modelBetas = getAllModelBetas(model)
   if (getAPIProvider() === 'bedrock') {
@@ -375,14 +377,14 @@ export const getModelBetas = memoize((model: string): string[] => {
   }
   return modelBetas
 })
-
+ 
 export const getBedrockExtraBodyParamsBetas = memoize(
   (model: string): string[] => {
     const modelBetas = getAllModelBetas(model)
     return modelBetas.filter(b => BEDROCK_EXTRA_PARAMS_HEADERS.has(b))
   },
 )
-
+ 
 /**
  * Merge SDK-provided betas with auto-detected model betas.
  * SDK betas are read from global state (set via setSdkBetas in main.tsx).
@@ -399,7 +401,7 @@ export function getMergedBetas(
   options?: { isAgenticQuery?: boolean },
 ): string[] {
   const baseBetas = [...getModelBetas(model)]
-
+ 
   // Agentic queries always need claude-code and cli-internal beta headers.
   // For non-Haiku models these are already in baseBetas; for Haiku they're
   // excluded by getAllModelBetas() since non-agentic Haiku calls don't need them.
@@ -416,19 +418,20 @@ export function getMergedBetas(
       baseBetas.push(CLI_INTERNAL_BETA_HEADER)
     }
   }
-
+ 
   const sdkBetas = getSdkBetas()
-
+ 
   if (!sdkBetas || sdkBetas.length === 0) {
     return baseBetas
   }
-
+ 
   // Merge SDK betas without duplicates (already filtered by filterAllowedSdkBetas)
   return [...baseBetas, ...sdkBetas.filter(b => !baseBetas.includes(b))]
 }
-
+ 
 export function clearBetasCaches(): void {
   getAllModelBetas.cache?.clear?.()
   getModelBetas.cache?.clear?.()
   getBedrockExtraBodyParamsBetas.cache?.clear?.()
 }
+ 

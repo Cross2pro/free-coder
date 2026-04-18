@@ -34,20 +34,20 @@ import {
   updateSettingsForSource,
 } from './settings/settings.js'
 import { createSignal } from './signal.js'
-
+ 
 export function isFastModeEnabled(): boolean {
   return !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_FAST_MODE)
 }
-
+ 
 export function isFastModeAvailable(): boolean {
   if (!isFastModeEnabled()) {
     return false
   }
   return getFastModeUnavailableReason() === null
 }
-
+ 
 type AuthType = 'oauth' | 'api-key'
-
+ 
 function getDisabledReasonMessage(
   disabledReason: FastModeDisabledReason,
   authType: AuthType,
@@ -68,12 +68,12 @@ function getDisabledReasonMessage(
       return 'Fast mode is currently unavailable'
   }
 }
-
+ 
 export function getFastModeUnavailableReason(): string | null {
   if (!isFastModeEnabled()) {
     return 'Fast mode is not available'
   }
-
+ 
   const statigReason = getFeatureValue_CACHED_MAY_BE_STALE(
     'tengu_penguins_off',
     null,
@@ -83,7 +83,7 @@ export function getFastModeUnavailableReason(): string | null {
     logForDebugging(`Fast mode unavailable: ${statigReason}`)
     return statigReason
   }
-
+ 
   // Previously, fast mode required the native binary (bun build). This is no
   // longer necessary, but we keep this option behind a flag just in case.
   if (
@@ -92,7 +92,7 @@ export function getFastModeUnavailableReason(): string | null {
   ) {
     return 'Fast mode requires the native binary · Install from: https://claude.com/product/claude-code'
   }
-
+ 
   // Not available in the SDK unless explicitly opted in via --settings.
   // Assistant daemon mode is exempt — it's first-party orchestration, and
   // kairosActive is set before this check runs (main.tsx:~1626 vs ~3249).
@@ -108,14 +108,14 @@ export function getFastModeUnavailableReason(): string | null {
       return reason
     }
   }
-
+ 
   // Only available for 1P (not Bedrock/Vertex/Foundry)
   if (getAPIProvider() !== 'firstParty') {
     const reason = 'Fast mode is not available on Bedrock, Vertex, or Foundry'
     logForDebugging(`Fast mode unavailable: ${reason}`)
     return reason
   }
-
+ 
   if (orgStatus.status === 'disabled') {
     if (
       orgStatus.reason === 'network_error' ||
@@ -135,17 +135,17 @@ export function getFastModeUnavailableReason(): string | null {
     logForDebugging(`Fast mode unavailable: ${reason}`)
     return reason
   }
-
+ 
   return null
 }
-
+ 
 // @[MODEL LAUNCH]: Update supported Fast Mode models.
-export const FAST_MODE_MODEL_DISPLAY = 'Opus 4.6'
-
+export const FAST_MODE_MODEL_DISPLAY = 'Opus 4.7'
+ 
 export function getFastModeModel(): string {
   return 'opus' + (isOpus1mMergeEnabled() ? '[1m]' : '')
 }
-
+ 
 export function getInitialFastModeSetting(model: ModelSetting): boolean {
   if (!isFastModeEnabled()) {
     return false
@@ -163,7 +163,7 @@ export function getInitialFastModeSetting(model: ModelSetting): boolean {
   }
   return settings.fastMode === true
 }
-
+ 
 export function isFastModeSupportedByModel(
   modelSetting: ModelSetting,
 ): boolean {
@@ -172,30 +172,31 @@ export function isFastModeSupportedByModel(
   }
   const model = modelSetting ?? getDefaultMainLoopModelSetting()
   const parsedModel = parseUserSpecifiedModel(model)
-  return parsedModel.toLowerCase().includes('opus-4-6')
+  const lower = parsedModel.toLowerCase()
+  return lower.includes('opus-4-7') || lower.includes('opus-4-6')
 }
-
+ 
 // --- Fast mode runtime state ---
 // Separate from user preference (settings.fastMode). This tracks the actual
 // operational state: whether we're actively sending fast speed or in cooldown
 // after a rate limit.
-
+ 
 export type FastModeRuntimeState =
   | { status: 'active' }
   | { status: 'cooldown'; resetAt: number; reason: CooldownReason }
-
+ 
 let runtimeState: FastModeRuntimeState = { status: 'active' }
 let hasLoggedCooldownExpiry = false
-
+ 
 // --- Cooldown event listeners ---
 export type CooldownReason = 'rate_limit' | 'overloaded'
-
+ 
 const cooldownTriggered =
   createSignal<[resetAt: number, reason: CooldownReason]>()
 const cooldownExpired = createSignal()
 export const onCooldownTriggered = cooldownTriggered.subscribe
 export const onCooldownExpired = cooldownExpired.subscribe
-
+ 
 export function getFastModeRuntimeState(): FastModeRuntimeState {
   if (
     runtimeState.status === 'cooldown' &&
@@ -210,7 +211,7 @@ export function getFastModeRuntimeState(): FastModeRuntimeState {
   }
   return runtimeState
 }
-
+ 
 export function triggerFastModeCooldown(
   resetTimestamp: number,
   reason: CooldownReason,
@@ -231,11 +232,11 @@ export function triggerFastModeCooldown(
   })
   cooldownTriggered.emit(resetTimestamp, reason)
 }
-
+ 
 export function clearFastModeCooldown(): void {
   runtimeState = { status: 'active' }
 }
-
+ 
 /**
  * Called when the API rejects a fast mode request (e.g., 400 "Fast mode is
  * not enabled for your organization"). Permanently disables fast mode using
@@ -253,13 +254,13 @@ export function handleFastModeRejectedByAPI(): void {
   }))
   orgFastModeChange.emit(false)
 }
-
+ 
 // --- Overage rejection listeners ---
 // Fired when a 429 indicates fast mode was rejected because extra usage
 // (overage billing) is not available. Distinct from org-level disabling.
 const overageRejection = createSignal<[message: string]>()
 export const onFastModeOverageRejection = overageRejection.subscribe
-
+ 
 function getOverageDisabledMessage(reason: string | null): string {
   switch (reason) {
     case 'out_of_credits':
@@ -282,11 +283,11 @@ function getOverageDisabledMessage(reason: string | null): string {
       return 'Fast mode disabled · extra usage not available'
   }
 }
-
+ 
 function isOutOfCreditsReason(reason: string | null): boolean {
   return reason === 'org_level_disabled_until' || reason === 'out_of_credits'
 }
-
+ 
 /**
  * Called when a 429 indicates fast mode was rejected because extra usage
  * is not available. Permanently disables fast mode (unless the user has
@@ -311,11 +312,11 @@ export function handleFastModeOverageRejection(reason: string | null): void {
   }
   overageRejection.emit(message)
 }
-
+ 
 export function isFastModeCooldown(): boolean {
   return getFastModeRuntimeState().status === 'cooldown'
 }
-
+ 
 export function getFastModeState(
   model: ModelSetting,
   fastModeUserEnabled: boolean | undefined,
@@ -333,7 +334,7 @@ export function getFastModeState(
   }
   return 'off'
 }
-
+ 
 // Disabled reason returned by the API. The API is the canonical source for why
 // fast mode is disabled (free account, admin preference, extra usage not enabled).
 export type FastModeDisabledReason =
@@ -342,7 +343,7 @@ export type FastModeDisabledReason =
   | 'extra_usage_disabled'
   | 'network_error'
   | 'unknown'
-
+ 
 // In-memory cache of the fast mode status from the API.
 // Distinct from the user's fastMode app state — this represents
 // whether the org *allows* fast mode and why it may be disabled.
@@ -352,18 +353,18 @@ type FastModeOrgStatus =
   | { status: 'pending' }
   | { status: 'enabled' }
   | { status: 'disabled'; reason: FastModeDisabledReason }
-
+ 
 let orgStatus: FastModeOrgStatus = { status: 'pending' }
-
+ 
 // Listeners notified when org-level fast mode status changes
 const orgFastModeChange = createSignal<[orgEnabled: boolean]>()
 export const onOrgFastModeChanged = orgFastModeChange.subscribe
-
+ 
 type FastModeResponse = {
   enabled: boolean
   disabled_reason: FastModeDisabledReason | null
 }
-
+ 
 async function fetchFastModeStatus(
   auth: { accessToken: string } | { apiKey: string },
 ): Promise<FastModeResponse> {
@@ -375,15 +376,15 @@ async function fetchFastModeStatus(
           'anthropic-beta': OAUTH_BETA_HEADER,
         }
       : { 'x-api-key': auth.apiKey }
-
+ 
   const response = await axios.get<FastModeResponse>(endpoint, { headers })
   return response.data
 }
-
+ 
 const PREFETCH_MIN_INTERVAL_MS = 30_000
 let lastPrefetchAt = 0
 let inflightPrefetch: Promise<void> | null = null
-
+ 
 /**
  * Resolve orgStatus from the persisted cache without making any API calls.
  * Used when startup prefetches are throttled to avoid hitting the network
@@ -403,24 +404,24 @@ export function resolveFastModeStatusFromCache(): void {
       ? { status: 'enabled' }
       : { status: 'disabled', reason: 'unknown' }
 }
-
+ 
 export async function prefetchFastModeStatus(): Promise<void> {
   // Skip network requests if nonessential traffic is disabled
   if (isEssentialTrafficOnly()) {
     return
   }
-
+ 
   if (!isFastModeEnabled()) {
     return
   }
-
+ 
   if (inflightPrefetch) {
     logForDebugging(
       'Fast mode prefetch in progress, returning in-flight promise',
     )
     return inflightPrefetch
   }
-
+ 
   // Service key OAuth sessions lack user:profile scope → endpoint 403s.
   // Resolve orgStatus from cache and bail before burning the throttle window.
   // API key auth is unaffected.
@@ -436,14 +437,14 @@ export async function prefetchFastModeStatus(): Promise<void> {
         : { status: 'disabled', reason: 'preference' }
     return
   }
-
+ 
   const now = Date.now()
   if (now - lastPrefetchAt < PREFETCH_MIN_INTERVAL_MS) {
     logForDebugging('Skipping fast mode prefetch, fetched recently')
     return
   }
   lastPrefetchAt = now
-
+ 
   const fetchWithCurrentAuth = async (): Promise<FastModeResponse> => {
     const currentTokens = getClaudeAIOAuthTokens()
     const auth =
@@ -457,7 +458,7 @@ export async function prefetchFastModeStatus(): Promise<void> {
     }
     return fetchFastModeStatus(auth)
   }
-
+ 
   async function doFetch(): Promise<void> {
     try {
       let status: FastModeResponse
@@ -482,7 +483,7 @@ export async function prefetchFastModeStatus(): Promise<void> {
           throw err
         }
       }
-
+ 
       const previousEnabled =
         orgStatus.status !== 'pending'
           ? orgStatus.status === 'enabled'
@@ -526,7 +527,8 @@ export async function prefetchFastModeStatus(): Promise<void> {
       inflightPrefetch = null
     }
   }
-
+ 
   inflightPrefetch = doFetch()
   return inflightPrefetch
 }
+ 

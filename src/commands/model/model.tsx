@@ -147,10 +147,10 @@ function SetModelAndClose({
         });
         return;
       }
-
+ 
       // @[MODEL LAUNCH]: Update check for 1M access.
       if (model && isOpus1mUnavailable(model)) {
-        onDone(`Opus 4.6 with 1M context is not available for your account. Learn more: https://code.claude.com/docs/en/model-config#extended-context-with-1m`, {
+        onDone(`Opus 4.7 with 1M context is not available for your account. Learn more: https://code.claude.com/docs/en/model-config#extended-context-with-1m`, {
           display: 'system'
         });
         return;
@@ -161,19 +161,19 @@ function SetModelAndClose({
         });
         return;
       }
-
+ 
       // Skip validation for default model
       if (!model) {
         setModel(null);
         return;
       }
-
+ 
       // Skip validation for known aliases - they're predefined and should work
       if (isKnownAlias(model)) {
         setModel(model);
         return;
       }
-
+ 
       // Validate and set custom model
       try {
         // Don't use parseUserSpecifiedModel for non-aliases since it lowercases the input

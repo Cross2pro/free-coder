@@ -16,7 +16,7 @@ import { findGitRoot, gitExe } from './git.js'
 import { logError } from './log.js'
 import { getCanonicalName, type ModelName } from './model/model.js'
 import { sequential } from './sequential.js'
-
+ 
 /**
  * List of repos where internal model names are allowed in trailers.
  * Includes both SSH and HTTPS URL formats.
@@ -73,7 +73,7 @@ const INTERNAL_MODEL_REPOS = [
   'github.com:anthropics/mobile-apps',
   'github.com/anthropics/mobile-apps',
 ]
-
+ 
 /**
  * Get the repo root for attribution operations.
  * Uses getCwd() which respects agent worktree overrides (AsyncLocalStorage),
@@ -84,13 +84,13 @@ export function getAttributionRepoRoot(): string {
   const cwd = getCwd()
   return findGitRoot(cwd) ?? getOriginalCwd()
 }
-
+ 
 // Cache for repo classification result. Primed once per process.
 // 'internal' = remote matches INTERNAL_MODEL_REPOS allowlist
 // 'external' = has a remote, not on allowlist (public/open-source repo)
 // 'none'     = no remote URL (not a git repo, or no remote configured)
 let repoClassCache: 'internal' | 'external' | 'none' | null = null
-
+ 
 /**
  * Synchronously return the cached repo classification.
  * Returns null if the async check hasn't run yet.
@@ -98,7 +98,7 @@ let repoClassCache: 'internal' | 'external' | 'none' | null = null
 export function getRepoClassCached(): 'internal' | 'external' | 'none' | null {
   return repoClassCache
 }
-
+ 
 /**
  * Synchronously return the cached result of isInternalModelRepo().
  * Returns false if the check hasn't run yet (safe default: don't leak).
@@ -106,7 +106,7 @@ export function getRepoClassCached(): 'internal' | 'external' | 'none' | null {
 export function isInternalModelRepoCached(): boolean {
   return repoClassCache === 'internal'
 }
-
+ 
 /**
  * Check if the current repo is in the allowlist for internal model names.
  * Memoized - only checks once per process.
@@ -115,10 +115,10 @@ export const isInternalModelRepo = sequential(async (): Promise<boolean> => {
   if (repoClassCache !== null) {
     return repoClassCache === 'internal'
   }
-
+ 
   const cwd = getAttributionRepoRoot()
   const remoteUrl = await getRemoteUrlForDir(cwd)
-
+ 
   if (!remoteUrl) {
     repoClassCache = 'none'
     return false
@@ -127,7 +127,7 @@ export const isInternalModelRepo = sequential(async (): Promise<boolean> => {
   repoClassCache = isInternal ? 'internal' : 'external'
   return isInternal
 })
-
+ 
 /**
  * Sanitize a surface key to use public model names.
  * Converts internal model variants to their public equivalents.
@@ -138,14 +138,14 @@ export function sanitizeSurfaceKey(surfaceKey: string): string {
   if (slashIndex === -1) {
     return surfaceKey
   }
-
+ 
   const surface = surfaceKey.slice(0, slashIndex)
   const model = surfaceKey.slice(slashIndex + 1)
   const sanitizedModel = sanitizeModelName(model)
-
+ 
   return `${surface}/${sanitizedModel}`
 }
-
+ 
 // @[MODEL LAUNCH]: Add a mapping for the new model ID so git commit trailers show the public name.
 /**
  * Sanitize a model name to its public equivalent.
@@ -153,6 +153,7 @@ export function sanitizeSurfaceKey(surfaceKey: string): string {
  */
 export function sanitizeModelName(shortName: string): string {
   // Map internal variants to public equivalents based on model family
+  if (shortName.includes('opus-4-7')) return 'claude-opus-4-7'
   if (shortName.includes('opus-4-6')) return 'claude-opus-4-6'
   if (shortName.includes('opus-4-5')) return 'claude-opus-4-5'
   if (shortName.includes('opus-4-1')) return 'claude-opus-4-1'
@@ -166,7 +167,7 @@ export function sanitizeModelName(shortName: string): string {
   // Unknown models get a generic name
   return 'claude'
 }
-
+ 
 /**
  * Attribution state for tracking Claude's contributions to files.
  */
@@ -190,7 +191,7 @@ export type AttributionState = {
   escapeCount: number
   escapeCountAtLastCommit: number
 }
-
+ 
 /**
  * Summary of Claude's contribution for a commit.
  */
@@ -200,7 +201,7 @@ export type AttributionSummary = {
   humanChars: number
   surfaces: string[]
 }
-
+ 
 /**
  * Per-file attribution details for git notes.
  */
@@ -210,7 +211,7 @@ export type FileAttribution = {
   percent: number
   surface: string
 }
-
+ 
 /**
  * Full attribution data for git notes JSON.
  */
@@ -222,14 +223,14 @@ export type AttributionData = {
   excludedGenerated: string[]
   sessions: string[]
 }
-
+ 
 /**
  * Get the current client surface from environment.
  */
 export function getClientSurface(): string {
   return process.env.CLAUDE_CODE_ENTRYPOINT ?? 'cli'
 }
-
+ 
 /**
  * Build a surface key that includes the model name.
  * Format: "surface/model" (e.g., "cli/claude-sonnet")
@@ -237,14 +238,14 @@ export function getClientSurface(): string {
 export function buildSurfaceKey(surface: string, model: ModelName): string {
   return `${surface}/${getCanonicalName(model)}`
 }
-
+ 
 /**
  * Compute SHA-256 hash of content.
  */
 export function computeContentHash(content: string): string {
   return createHash('sha256').update(content).digest('hex')
 }
-
+ 
 /**
  * Normalize file path to relative path from cwd for consistent tracking.
  * Resolves symlinks to handle /tmp vs /private/tmp on macOS.
@@ -252,28 +253,28 @@ export function computeContentHash(content: string): string {
 export function normalizeFilePath(filePath: string): string {
   const fs = getFsImplementation()
   const cwd = getAttributionRepoRoot()
-
+ 
   if (!isAbsolute(filePath)) {
     return filePath
   }
-
+ 
   // Resolve symlinks in both paths for consistent comparison
   // (e.g., /tmp -> /private/tmp on macOS)
   let resolvedPath = filePath
   let resolvedCwd = cwd
-
+ 
   try {
     resolvedPath = fs.realpathSync(filePath)
   } catch {
     // File may not exist yet, use original path
   }
-
+ 
   try {
     resolvedCwd = fs.realpathSync(cwd)
   } catch {
     // Keep original cwd
   }
-
+ 
   if (
     resolvedPath.startsWith(resolvedCwd + sep) ||
     resolvedPath === resolvedCwd
@@ -281,15 +282,15 @@ export function normalizeFilePath(filePath: string): string {
     // Normalize to forward slashes so keys match git diff output on Windows
     return relative(resolvedCwd, resolvedPath).replaceAll(sep, '/')
   }
-
+ 
   // Fallback: try original comparison
   if (filePath.startsWith(cwd + sep) || filePath === cwd) {
     return relative(cwd, filePath).replaceAll(sep, '/')
   }
-
+ 
   return filePath
 }
-
+ 
 /**
  * Expand a relative path to absolute path.
  */
@@ -299,7 +300,7 @@ export function expandFilePath(filePath: string): string {
   }
   return join(getAttributionRepoRoot(), filePath)
 }
-
+ 
 /**
  * Create an empty attribution state for a new session.
  */
@@ -317,7 +318,7 @@ export function createEmptyAttributionState(): AttributionState {
     escapeCountAtLastCommit: 0,
   }
 }
-
+ 
 /**
  * Compute the character contribution for a file modification.
  * Returns the FileAttributionState to store, or null if tracking failed.
@@ -330,11 +331,11 @@ function computeFileModificationState(
   mtime: number,
 ): FileAttributionState | null {
   const normalizedPath = normalizeFilePath(filePath)
-
+ 
   try {
     // Calculate Claude's character contribution
     let claudeContribution: number
-
+ 
     if (oldContent === '' || newContent === '') {
       // New file or full deletion - contribution is the content length
       claudeContribution =
@@ -363,11 +364,11 @@ function computeFileModificationState(
       const newChangedLen = newContent.length - prefixEnd - suffixLen
       claudeContribution = Math.max(oldChangedLen, newChangedLen)
     }
-
+ 
     // Get current file state if it exists
     const existingState = existingFileStates.get(normalizedPath)
     const existingContribution = existingState?.claudeContribution ?? 0
-
+ 
     return {
       contentHash: computeContentHash(newContent),
       claudeContribution: existingContribution + claudeContribution,
@@ -378,7 +379,7 @@ function computeFileModificationState(
     return null
   }
 }
-
+ 
 /**
  * Get a file's modification time (mtimeMs), falling back to Date.now() if
  * the file doesn't exist. This is async so it can be precomputed before
@@ -394,7 +395,7 @@ export async function getFileMtime(filePath: string): Promise<number> {
     return Date.now()
   }
 }
-
+ 
 /**
  * Track a file modification by Claude.
  * Called after Edit/Write tool completes.
@@ -418,20 +419,20 @@ export function trackFileModification(
   if (!newFileState) {
     return state
   }
-
+ 
   const newFileStates = new Map(state.fileStates)
   newFileStates.set(normalizedPath, newFileState)
-
+ 
   logForDebugging(
     `Attribution: Tracked ${newFileState.claudeContribution} chars for ${normalizedPath}`,
   )
-
+ 
   return {
     ...state,
     fileStates: newFileStates,
   }
 }
-
+ 
 /**
  * Track a file creation by Claude (e.g., via bash command).
  * Used when Claude creates a new file through a non-tracked mechanism.
@@ -445,7 +446,7 @@ export function trackFileCreation(
   // A creation is simply a modification from empty to the new content
   return trackFileModification(state, filePath, '', content, false, mtime)
 }
-
+ 
 /**
  * Track a file deletion by Claude (e.g., via bash rm command).
  * Used when Claude deletes a file through a non-tracked mechanism.
@@ -459,28 +460,28 @@ export function trackFileDeletion(
   const existingState = state.fileStates.get(normalizedPath)
   const existingContribution = existingState?.claudeContribution ?? 0
   const deletedChars = oldContent.length
-
+ 
   const newFileState: FileAttributionState = {
     contentHash: '', // Empty hash for deleted files
     claudeContribution: existingContribution + deletedChars,
     mtime: Date.now(),
   }
-
+ 
   const newFileStates = new Map(state.fileStates)
   newFileStates.set(normalizedPath, newFileState)
-
+ 
   logForDebugging(
     `Attribution: Tracked deletion of ${normalizedPath} (${deletedChars} chars removed, total contribution: ${newFileState.claudeContribution})`,
   )
-
+ 
   return {
     ...state,
     fileStates: newFileStates,
   }
 }
-
+ 
 // --
-
+ 
 /**
  * Track multiple file changes in bulk, mutating a single Map copy.
  * This avoids the O(n²) cost of copying the Map per file when processing
@@ -498,7 +499,7 @@ export function trackBulkFileChanges(
 ): AttributionState {
   // Create ONE copy of the Map, then mutate it for each file
   const newFileStates = new Map(state.fileStates)
-
+ 
   for (const change of changes) {
     const mtime = change.mtime ?? Date.now()
     if (change.type === 'deleted') {
@@ -506,13 +507,13 @@ export function trackBulkFileChanges(
       const existingState = newFileStates.get(normalizedPath)
       const existingContribution = existingState?.claudeContribution ?? 0
       const deletedChars = change.oldContent.length
-
+ 
       newFileStates.set(normalizedPath, {
         contentHash: '',
         claudeContribution: existingContribution + deletedChars,
         mtime,
       })
-
+ 
       logForDebugging(
         `Attribution: Tracked deletion of ${normalizedPath} (${deletedChars} chars removed, total contribution: ${existingContribution + deletedChars})`,
       )
@@ -527,20 +528,20 @@ export function trackBulkFileChanges(
       if (newFileState) {
         const normalizedPath = normalizeFilePath(change.path)
         newFileStates.set(normalizedPath, newFileState)
-
+ 
         logForDebugging(
           `Attribution: Tracked ${newFileState.claudeContribution} chars for ${normalizedPath}`,
         )
       }
     }
   }
-
+ 
   return {
     ...state,
     fileStates: newFileStates,
   }
 }
-
+ 
 /**
  * Calculate final attribution for staged files.
  * Compares session baseline to committed state.
@@ -551,25 +552,25 @@ export async function calculateCommitAttribution(
 ): Promise<AttributionData> {
   const cwd = getAttributionRepoRoot()
   const sessionId = getSessionId()
-
+ 
   const files: Record<string, FileAttribution> = {}
   const excludedGenerated: string[] = []
   const surfaces = new Set<string>()
   const surfaceCounts: Record<string, number> = {}
-
+ 
   let totalClaudeChars = 0
   let totalHumanChars = 0
-
+ 
   // Merge file states from all sessions
   const mergedFileStates = new Map<string, FileAttributionState>()
   const mergedBaselines = new Map<
     string,
     { contentHash: string; mtime: number }
   >()
-
+ 
   for (const state of states) {
     surfaces.add(state.surface)
-
+ 
     // Merge baselines (earliest baseline wins)
     // Handle both Map and plain object (in case of serialization)
     const baselines =
@@ -588,7 +589,7 @@ export async function calculateCommitAttribution(
         mergedBaselines.set(path, baseline)
       }
     }
-
+ 
     // Merge file states (accumulate contributions)
     // Handle both Map and plain object (in case of serialization)
     const fileStates =
@@ -612,7 +613,7 @@ export async function calculateCommitAttribution(
       }
     }
   }
-
+ 
   // Process files in parallel
   const fileResults = await Promise.all(
     stagedFiles.map(async file => {
@@ -620,20 +621,20 @@ export async function calculateCommitAttribution(
       if (isGeneratedFile(file)) {
         return { type: 'generated' as const, file }
       }
-
+ 
       const absPath = join(cwd, file)
       const fileState = mergedFileStates.get(file)
       const baseline = mergedBaselines.get(file)
-
+ 
       // Get the surface for this file
       const fileSurface = states[0]!.surface
-
+ 
       let claudeChars = 0
       let humanChars = 0
-
+ 
       // Check if file was deleted
       const deleted = await isFileDeleted(file)
-
+ 
       if (deleted) {
         // File was deleted
         if (fileState) {
@@ -652,7 +653,7 @@ export async function calculateCommitAttribution(
           // build artifacts into memory when they appear in the working tree.
           // stats.size (bytes) is an adequate proxy for char count here.
           const stats = await stat(absPath)
-
+ 
           if (fileState) {
             // We have tracked modifications for this file
             claudeChars = fileState.claudeContribution
@@ -670,14 +671,14 @@ export async function calculateCommitAttribution(
           return null
         }
       }
-
+ 
       // Ensure non-negative values
       claudeChars = Math.max(0, claudeChars)
       humanChars = Math.max(0, humanChars)
-
+ 
       const total = claudeChars + humanChars
       const percent = total > 0 ? Math.round((claudeChars / total) * 100) : 0
-
+ 
       return {
         type: 'file' as const,
         file,
@@ -688,34 +689,34 @@ export async function calculateCommitAttribution(
       }
     }),
   )
-
+ 
   // Aggregate results
   for (const result of fileResults) {
     if (!result) continue
-
+ 
     if (result.type === 'generated') {
       excludedGenerated.push(result.file)
       continue
     }
-
+ 
     files[result.file] = {
       claudeChars: result.claudeChars,
       humanChars: result.humanChars,
       percent: result.percent,
       surface: result.surface,
     }
-
+ 
     totalClaudeChars += result.claudeChars
     totalHumanChars += result.humanChars
-
+ 
     surfaceCounts[result.surface] =
       (surfaceCounts[result.surface] ?? 0) + result.claudeChars
   }
-
+ 
   const totalChars = totalClaudeChars + totalHumanChars
   const claudePercent =
     totalChars > 0 ? Math.round((totalClaudeChars / totalChars) * 100) : 0
-
+ 
   // Calculate surface breakdown (percentage of total content per surface)
   const surfaceBreakdown: Record<
     string,
@@ -726,7 +727,7 @@ export async function calculateCommitAttribution(
     const percent = totalChars > 0 ? Math.round((chars / totalChars) * 100) : 0
     surfaceBreakdown[surface] = { claudeChars: chars, percent }
   }
-
+ 
   return {
     version: 1,
     summary: {
@@ -741,7 +742,7 @@ export async function calculateCommitAttribution(
     sessions: [sessionId],
   }
 }
-
+ 
 /**
  * Get the size of changes for a file from git diff.
  * Returns the number of characters added/removed (absolute difference).
@@ -750,7 +751,7 @@ export async function calculateCommitAttribution(
  */
 export async function getGitDiffSize(filePath: string): Promise<number> {
   const cwd = getAttributionRepoRoot()
-
+ 
   try {
     // Use git diff --stat to get a summary of changes
     const result = await execFileNoThrowWithCwd(
@@ -758,48 +759,48 @@ export async function getGitDiffSize(filePath: string): Promise<number> {
       ['diff', '--cached', '--stat', '--', filePath],
       { cwd, timeout: 5000 },
     )
-
+ 
     if (result.code !== 0 || !result.stdout) {
       return 0
     }
-
+ 
     // Parse the stat output to extract additions and deletions
     // Format: " file | 5 ++---" or " file | 10 +"
     const lines = result.stdout.split('\n').filter(Boolean)
     let totalChanges = 0
-
+ 
     for (const line of lines) {
       // Skip the summary line (e.g., "1 file changed, 3 insertions(+), 2 deletions(-)")
       if (line.includes('file changed') || line.includes('files changed')) {
         const insertMatch = line.match(/(\d+) insertions?/)
         const deleteMatch = line.match(/(\d+) deletions?/)
-
+ 
         // Use line-based changes and approximate chars per line (~40 chars average)
         const insertions = insertMatch ? parseInt(insertMatch[1]!, 10) : 0
         const deletions = deleteMatch ? parseInt(deleteMatch[1]!, 10) : 0
         totalChanges += (insertions + deletions) * 40
       }
     }
-
+ 
     return totalChanges
   } catch {
     return 0
   }
 }
-
+ 
 /**
  * Check if a file was deleted in the staged changes.
  */
 export async function isFileDeleted(filePath: string): Promise<boolean> {
   const cwd = getAttributionRepoRoot()
-
+ 
   try {
     const result = await execFileNoThrowWithCwd(
       gitExe(),
       ['diff', '--cached', '--name-status', '--', filePath],
       { cwd, timeout: 5000 },
     )
-
+ 
     if (result.code === 0 && result.stdout) {
       // Format: "D\tfilename" for deleted files
       return result.stdout.trim().startsWith('D\t')
@@ -807,43 +808,43 @@ export async function isFileDeleted(filePath: string): Promise<boolean> {
   } catch {
     // Ignore errors
   }
-
+ 
   return false
 }
-
+ 
 /**
  * Get staged files from git.
  */
 export async function getStagedFiles(): Promise<string[]> {
   const cwd = getAttributionRepoRoot()
-
+ 
   try {
     const result = await execFileNoThrowWithCwd(
       gitExe(),
       ['diff', '--cached', '--name-only'],
       { cwd, timeout: 5000 },
     )
-
+ 
     if (result.code === 0 && result.stdout) {
       return result.stdout.split('\n').filter(Boolean)
     }
   } catch (error) {
     logError(error as Error)
   }
-
+ 
   return []
 }
-
+ 
 // formatAttributionTrailer moved to attributionTrailer.ts for tree-shaking
 // (contains excluded strings that should not be in external builds)
-
+ 
 /**
  * Check if we're in a transient git state (rebase, merge, cherry-pick).
  */
 export async function isGitTransientState(): Promise<boolean> {
   const gitDir = await resolveGitDir(getAttributionRepoRoot())
   if (!gitDir) return false
-
+ 
   const indicators = [
     'rebase-merge',
     'rebase-apply',
@@ -851,7 +852,7 @@ export async function isGitTransientState(): Promise<boolean> {
     'CHERRY_PICK_HEAD',
     'BISECT_LOG',
   ]
-
+ 
   const results = await Promise.all(
     indicators.map(async indicator => {
       try {
@@ -862,10 +863,10 @@ export async function isGitTransientState(): Promise<boolean> {
       }
     }),
   )
-
+ 
   return results.some(exists => exists)
 }
-
+ 
 /**
  * Convert attribution state to snapshot message for persistence.
  */
@@ -874,11 +875,11 @@ export function stateToSnapshotMessage(
   messageId: UUID,
 ): AttributionSnapshotMessage {
   const fileStates: Record<string, FileAttributionState> = {}
-
+ 
   for (const [path, fileState] of state.fileStates) {
     fileStates[path] = fileState
   }
-
+ 
   return {
     type: 'attribution-snapshot',
     messageId,
@@ -892,7 +893,7 @@ export function stateToSnapshotMessage(
     escapeCountAtLastCommit: state.escapeCountAtLastCommit,
   }
 }
-
+ 
 /**
  * Restore attribution state from snapshot messages.
  */
@@ -900,7 +901,7 @@ export function restoreAttributionStateFromSnapshots(
   snapshots: AttributionSnapshotMessage[],
 ): AttributionState {
   const state = createEmptyAttributionState()
-
+ 
   // Snapshots are full-state dumps (see stateToSnapshotMessage), not deltas.
   // The last snapshot has the most recent count for every path — fileStates
   // never shrinks. Iterating and SUMMING counts across snapshots causes
@@ -910,12 +911,12 @@ export function restoreAttributionStateFromSnapshots(
   if (!lastSnapshot) {
     return state
   }
-
+ 
   state.surface = lastSnapshot.surface
   for (const [path, fileState] of Object.entries(lastSnapshot.fileStates)) {
     state.fileStates.set(path, fileState)
   }
-
+ 
   // Restore prompt counts from the last snapshot (most recent state)
   state.promptCount = lastSnapshot.promptCount ?? 0
   state.promptCountAtLastCommit = lastSnapshot.promptCountAtLastCommit ?? 0
@@ -924,10 +925,10 @@ export function restoreAttributionStateFromSnapshots(
     lastSnapshot.permissionPromptCountAtLastCommit ?? 0
   state.escapeCount = lastSnapshot.escapeCount ?? 0
   state.escapeCountAtLastCommit = lastSnapshot.escapeCountAtLastCommit ?? 0
-
+ 
   return state
 }
-
+ 
 /**
  * Restore attribution state from log snapshots on session resume.
  */
@@ -938,7 +939,7 @@ export function attributionRestoreStateFromLog(
   const state = restoreAttributionStateFromSnapshots(attributionSnapshots)
   onUpdateState(state)
 }
-
+ 
 /**
  * Increment promptCount and save an attribution snapshot.
  * Used to persist the prompt count across compaction.
@@ -959,3 +960,4 @@ export function incrementPromptCount(
   saveSnapshot(snapshot)
   return newAttribution
 }
+ 
